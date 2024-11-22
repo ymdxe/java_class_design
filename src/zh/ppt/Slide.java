@@ -9,6 +9,8 @@ import java.io.*;
 import java.util.ArrayList;
 import javax.swing.*;
 
+
+
 public class Slide {
 
     JFrame frame;
@@ -17,6 +19,9 @@ public class Slide {
     JScrollPane edgeScrollPane; // 包含缩略图面板的滚动面板
     ArrayList<JPanel> pages; // 存储幻灯片页面的列表
     int curPageIdx = 0;      // 当前页面索引
+    JButton addTextBoxButton; // 添加信息框按钮
+    JButton setFontButton;    // 设置字体属性的按钮
+    JTextPane selectedTextBox; // 当前选定的文本框
 
     Presentation presentation;   // 当前演示文稿
     boolean isModified = false;  // 是否有未保存的修改
@@ -53,7 +58,124 @@ public class Slide {
         frame.add(edgeScrollPane, BorderLayout.WEST);
 
         edgeScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+        JToolBar toolBar = new JToolBar();
+
+        addTextBoxButton = new JButton("添加文本框");
+        addTextBoxButton.addActionListener(e -> addTextBox());
+        toolBar.add(addTextBoxButton);
+
+        setFontButton = new JButton("设置字体");
+        setFontButton.addActionListener(e -> setFontProperties());
+        toolBar.add(setFontButton);
+
+        frame.add(toolBar, BorderLayout.NORTH);
     }
+    /**
+     * 添加文本框
+    */
+    void addTextBox() {
+        JPanel currentPage = pages.get(curPageIdx);
+
+        JTextPane textPane = new JTextPane();
+        textPane.setSize(200, 50);
+        textPane.setLocation(50, 50);
+        textPane.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        textPane.setFont(new Font("Serif", Font.PLAIN, 16));
+        textPane.setForeground(Color.BLACK);
+
+        // 为选择和拖动添加鼠标监听器
+        MouseAdapter mouseAdapter = new MouseAdapter() {
+            Point offset;
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                selectedTextBox = (JTextPane) e.getSource();
+                offset = e.getPoint();
+                selectedTextBox.requestFocus();
+                // 突出显示选定的文本框
+                selectedTextBox.setBorder(BorderFactory.createLineBorder(Color.BLUE));
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                Point location = selectedTextBox.getLocation();
+                int x = location.x + e.getX() - offset.x;
+                int y = location.y + e.getY() - offset.y;
+                selectedTextBox.setLocation(x, y);
+                isModified = true;
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                // 移动后重置边框
+                selectedTextBox.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            }
+        };
+
+        textPane.addMouseListener(mouseAdapter);
+        textPane.addMouseMotionListener(mouseAdapter);
+
+        currentPage.add(textPane);
+        currentPage.repaint();
+
+        // Add text box data to current page's data
+        TextBoxData textBoxData = new TextBoxData(
+                "", 50, 50, 200, 50, "Serif", Font.PLAIN, 16, Color.BLACK);
+        presentation.getPagesData().get(curPageIdx).addTextBoxData(textBoxData);
+
+        isModified = true;
+    }
+
+    /**
+     * 设置属性
+     */
+
+    void setFontProperties() {
+        if (selectedTextBox == null) {
+            JOptionPane.showMessageDialog(frame, "请先选择一个文本框！", "提示", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        Font currentFont = selectedTextBox.getFont();
+        Color currentColor = selectedTextBox.getForeground();
+
+        FontChooser fontChooser = new FontChooser(currentFont, currentColor);
+        int result = JOptionPane.showConfirmDialog(frame, fontChooser, "选择字体",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (result == JOptionPane.OK_OPTION) {
+            Font selectedFont = fontChooser.getSelectedFont();
+            Color selectedColor = fontChooser.getSelectedColor();
+
+            selectedTextBox.setFont(selectedFont);
+            selectedTextBox.setForeground(selectedColor);
+
+            isModified = true;
+
+            // Update the corresponding TextBoxData
+            int index = getTextBoxIndex(selectedTextBox);
+            if (index != -1) {
+                TextBoxData data = presentation.getPagesData().get(curPageIdx).getTextBoxes().get(index);
+                data.setFontName(selectedFont.getName());
+                data.setFontStyle(selectedFont.getStyle());
+                data.setFontSize(selectedFont.getSize());
+                data.setTextColor(selectedColor);
+            }
+        }
+    }
+
+    int getTextBoxIndex(JTextPane textPane) {
+        JPanel currentPage = pages.get(curPageIdx);
+        Component[] components = currentPage.getComponents();
+        for (int i = 0; i < components.length; i++) {
+            if (components[i] == textPane) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
 
     /**
      * 显示窗体
@@ -143,30 +265,94 @@ public class Slide {
      * 创建缩略图
      */
     BufferedImage createThumbnail(JPanel panel, int width, int height) {
-        // Ensure the panel has valid size
+        // 确保面板有有效的大小
         panel.setSize(panel.getPreferredSize());
         panel.validate();
 
-        // Create a BufferedImage with a standard RGB color model
+        // 创建图像
         BufferedImage image = new BufferedImage(panel.getWidth(), panel.getHeight(), BufferedImage.TYPE_INT_RGB);
         Graphics2D g2 = image.createGraphics();
         panel.paint(g2);
         g2.dispose();
 
-        // Create the thumbnail
+        // 缩放图像
         Image scaledImage = image.getScaledInstance(width, height, Image.SCALE_SMOOTH);
 
-        // Create a BufferedImage from the scaled image
+        // 创建缩略图
         BufferedImage thumbnail = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = thumbnail.createGraphics();
         g.drawImage(scaledImage, 0, 0, null);
         g.dispose();
 
-        // Remove any ICC profiles
+        // 转换颜色空间，移除错误的 ICC 配置文件
         ColorConvertOp op = new ColorConvertOp(ColorSpace.getInstance(ColorSpace.CS_sRGB), null);
         op.filter(thumbnail, thumbnail);
 
         return thumbnail;
+    }
+
+
+
+    JTextPane createTextPaneFromData(TextBoxData data) {
+        JTextPane textPane = new JTextPane();
+        textPane.setText(data.getTextContent());
+        textPane.setBounds(data.getX(), data.getY(), data.getWidth(), data.getHeight());
+        textPane.setFont(new Font(data.getFontName(), data.getFontStyle(), data.getFontSize()));
+        textPane.setForeground(data.getTextColor());
+        textPane.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+
+        // Add mouse listeners for selection and dragging
+        MouseAdapter mouseAdapter = new MouseAdapter() {
+            Point offset;
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                selectedTextBox = (JTextPane) e.getSource();
+                offset = e.getPoint();
+                selectedTextBox.requestFocus();
+                selectedTextBox.setBorder(BorderFactory.createLineBorder(Color.BLUE));
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                Point location = selectedTextBox.getLocation();
+                int x = location.x + e.getX() - offset.x;
+                int y = location.y + e.getY() - offset.y;
+                selectedTextBox.setLocation(x, y);
+                isModified = true;
+
+                // Update position in TextBoxData
+                int index = getTextBoxIndex(selectedTextBox);
+                if (index != -1) {
+                    TextBoxData data = presentation.getPagesData().get(curPageIdx).getTextBoxes().get(index);
+                    data.setX(x);
+                    data.setY(y);
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                selectedTextBox.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            }
+        };
+
+        textPane.addMouseListener(mouseAdapter);
+        textPane.addMouseMotionListener(mouseAdapter);
+
+        // Add key listener to update text content in TextBoxData
+        textPane.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                isModified = true;
+                int index = getTextBoxIndex(textPane);
+                if (index != -1) {
+                    TextBoxData data = presentation.getPagesData().get(curPageIdx).getTextBoxes().get(index);
+                    data.setTextContent(textPane.getText());
+                }
+            }
+        });
+
+        return textPane;
     }
 
 
@@ -177,6 +363,17 @@ public class Slide {
         if (pageIndex >= 0 && pageIndex < pages.size()) {
             curPageIdx = pageIndex;
             mainPanel.removeAll();
+
+            JPanel page = pages.get(pageIndex);
+            page.removeAll(); // Clear existing components
+
+            // Reconstruct text boxes from PageData
+            PageData pageData = presentation.getPagesData().get(pageIndex);
+            for (TextBoxData data : pageData.getTextBoxes()) {
+                JTextPane textPane = createTextPaneFromData(data);
+                page.add(textPane);
+            }
+
             mainPanel.add(pages.get(pageIndex), BorderLayout.CENTER);
             mainPanel.revalidate();
             mainPanel.repaint();
@@ -325,6 +522,12 @@ public class Slide {
                     newPage.setPreferredSize(new Dimension(800, 600));
                     newPage.setSize(newPage.getPreferredSize());
                     newPage.validate();
+
+                    PageData pageData = presentation.getPagesData().get(i);
+                    for (TextBoxData data : pageData.getTextBoxes()) {
+                        JTextPane textPane = createTextPaneFromData(data);
+                        newPage.add(textPane);
+                    }
 
                     pages.add(newPage);
                     addThumbnail(newPage, i);
