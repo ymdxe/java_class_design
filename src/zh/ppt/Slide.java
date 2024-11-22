@@ -8,57 +8,69 @@ import java.awt.image.ColorConvertOp;
 import java.io.*;
 import java.util.ArrayList;
 import javax.swing.*;
+import javax.swing.text.*;
 
+public class Slide extends JFrame {
 
-
-public class Slide {
-
-    JFrame frame;
     JPanel mainPanel;        // 显示幻灯片页面的主面板
     JPanel edgePanel;        // 显示缩略图的面板
     JScrollPane edgeScrollPane; // 包含缩略图面板的滚动面板
     ArrayList<JPanel> pages; // 存储幻灯片页面的列表
     int curPageIdx = 0;      // 当前页面索引
-    JButton addTextBoxButton; // 添加信息框按钮
-    JButton setFontButton;    // 设置字体属性的按钮
-    JTextPane selectedTextBox; // 当前选定的文本框
 
     Presentation presentation;   // 当前演示文稿
     boolean isModified = false;  // 是否有未保存的修改
     File currentFile = null;     // 当前文件
 
+    JButton addTextBoxButton; // 添加文本框按钮
+    JButton setFontButton;    // 设置字体按钮
+    JTextPane selectedTextBox; // 当前选中的文本框
+
     public Slide() {
-        frame = new JFrame();
         pages = new ArrayList<>();
         presentation = new Presentation();
+        setFrame();
+        setMenu();
+        createNewSlide();
+        showFrame();
     }
 
+    public void setSelectedShape(ShapeComponent shape) {
+        this.selectedShape = shape;
+    }
+
+    // 添加一个按钮，用于修改形状填充颜色
+    JButton setShapeFillColorButton;
+
+    // 当前选中的形状
+    ShapeComponent selectedShape;
     /**
      * 设置窗体
      */
     void setFrame() {
-        frame.setTitle("PPT演示");
+        setTitle("PPT演示");
 
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
-        frame.setSize(screenSize.width / 4 * 3, screenSize.height / 4 * 3);
-        frame.setLocation(screenSize.width / 8, screenSize.height / 8);
+        setSize(screenSize.width / 4 * 3, screenSize.height / 4 * 3);
+        setLocation(screenSize.width / 8, screenSize.height / 8);
 
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         mainPanel = new JPanel(new BorderLayout());
-        frame.add(mainPanel, BorderLayout.CENTER);
+        add(mainPanel, BorderLayout.CENTER);
 
         edgePanel = new JPanel();
         edgePanel.setLayout(new BoxLayout(edgePanel, BoxLayout.Y_AXIS));
         edgePanel.setBackground(Color.LIGHT_GRAY);
 
         edgeScrollPane = new JScrollPane(edgePanel);
-        edgeScrollPane.setPreferredSize(new Dimension(200, frame.getHeight()));
-        frame.add(edgeScrollPane, BorderLayout.WEST);
+        edgeScrollPane.setPreferredSize(new Dimension(200, getHeight()));
+        add(edgeScrollPane, BorderLayout.WEST);
 
         edgeScrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
+        // 创建工具栏
         JToolBar toolBar = new JToolBar();
 
         addTextBoxButton = new JButton("添加文本框");
@@ -69,119 +81,55 @@ public class Slide {
         setFontButton.addActionListener(e -> setFontProperties());
         toolBar.add(setFontButton);
 
-        frame.add(toolBar, BorderLayout.NORTH);
+        setShapeFillColorButton = new JButton("修改形状填充颜色");
+        setShapeFillColorButton.addActionListener(e -> setShapeFillColor());
+        toolBar.add(setShapeFillColorButton);
+
+
+        add(toolBar, BorderLayout.NORTH);
     }
-    /**
-     * 添加文本框
-    */
-    void addTextBox() {
-        JPanel currentPage = pages.get(curPageIdx);
+    // 实现 setShapeFillColor() 方法
+    void setShapeFillColor() {
+        if (selectedShape == null) {
+            JOptionPane.showMessageDialog(this, "请先选择一个形状！", "提示", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
-        JTextPane textPane = new JTextPane();
-        textPane.setSize(200, 50);
-        textPane.setLocation(50, 50);
-        textPane.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        textPane.setFont(new Font("Serif", Font.PLAIN, 16));
-        textPane.setForeground(Color.BLACK);
+        Color newColor = JColorChooser.showDialog(this, "选择填充颜色", selectedShape.getFillColor());
+        if (newColor != null) {
+            selectedShape.setFillColor(newColor);
+            isModified = true;
 
-        // 为选择和拖动添加鼠标监听器
-        MouseAdapter mouseAdapter = new MouseAdapter() {
-            Point offset;
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                selectedTextBox = (JTextPane) e.getSource();
-                offset = e.getPoint();
-                selectedTextBox.requestFocus();
-                // 突出显示选定的文本框
-                selectedTextBox.setBorder(BorderFactory.createLineBorder(Color.BLUE));
-            }
-
-            @Override
-            public void mouseDragged(MouseEvent e) {
-                Point location = selectedTextBox.getLocation();
-                int x = location.x + e.getX() - offset.x;
-                int y = location.y + e.getY() - offset.y;
-                selectedTextBox.setLocation(x, y);
-                isModified = true;
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                // 移动后重置边框
-                selectedTextBox.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-            }
-        };
-
-        textPane.addMouseListener(mouseAdapter);
-        textPane.addMouseMotionListener(mouseAdapter);
-
-        currentPage.add(textPane);
-        currentPage.repaint();
-
-        // Add text box data to current page's data
-        TextBoxData textBoxData = new TextBoxData(
-                "", 50, 50, 200, 50, "Serif", Font.PLAIN, 16, Color.BLACK);
-        presentation.getPagesData().get(curPageIdx).addTextBoxData(textBoxData);
-
+            // 更新 ShapeData 中的填充颜色
+            updateShapeFillColor(selectedShape);
+        }
+    }
+    // 更新 ShapeData 中的填充颜色
+    void updateShapeFillColor(ShapeComponent shapeComp) {
+        int index = getShapeIndex(shapeComp);
+        if (index != -1) {
+            ShapeData shapeData = presentation.getPagesData().get(curPageIdx).getShapes().get(index);
+            shapeData.setFillColor(shapeComp.getFillColor());
+        }
+        isModified = true;
+    }
+    // 更新 ShapeData 中的大小和旋转角度
+    void updateShapeSizeAndRotation(ShapeComponent shapeComp) {
+        int index = getShapeIndex(shapeComp);
+        if (index != -1) {
+            ShapeData shapeData = presentation.getPagesData().get(curPageIdx).getShapes().get(index);
+            shapeData.setWidth(shapeComp.getWidth());
+            shapeData.setHeight(shapeComp.getHeight());
+            shapeData.setRotation(shapeComp.getRotation());
+        }
         isModified = true;
     }
 
     /**
-     * 设置属性
-     */
-
-    void setFontProperties() {
-        if (selectedTextBox == null) {
-            JOptionPane.showMessageDialog(frame, "请先选择一个文本框！", "提示", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        Font currentFont = selectedTextBox.getFont();
-        Color currentColor = selectedTextBox.getForeground();
-
-        FontChooser fontChooser = new FontChooser(currentFont, currentColor);
-        int result = JOptionPane.showConfirmDialog(frame, fontChooser, "选择字体",
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-
-        if (result == JOptionPane.OK_OPTION) {
-            Font selectedFont = fontChooser.getSelectedFont();
-            Color selectedColor = fontChooser.getSelectedColor();
-
-            selectedTextBox.setFont(selectedFont);
-            selectedTextBox.setForeground(selectedColor);
-
-            isModified = true;
-
-            // Update the corresponding TextBoxData
-            int index = getTextBoxIndex(selectedTextBox);
-            if (index != -1) {
-                TextBoxData data = presentation.getPagesData().get(curPageIdx).getTextBoxes().get(index);
-                data.setFontName(selectedFont.getName());
-                data.setFontStyle(selectedFont.getStyle());
-                data.setFontSize(selectedFont.getSize());
-                data.setTextColor(selectedColor);
-            }
-        }
-    }
-
-    int getTextBoxIndex(JTextPane textPane) {
-        JPanel currentPage = pages.get(curPageIdx);
-        Component[] components = currentPage.getComponents();
-        for (int i = 0; i < components.length; i++) {
-            if (components[i] == textPane) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-
-    /**
      * 显示窗体
      */
-    void show() {
-        frame.setVisible(true);
+    void showFrame() {
+        setVisible(true);
     }
 
     /**
@@ -189,7 +137,7 @@ public class Slide {
      */
     void createNewSlide() {
         if (isModified) {
-            int option = JOptionPane.showConfirmDialog(frame, "当前文件尚未保存，是否保存？", "提示",
+            int option = JOptionPane.showConfirmDialog(this, "当前文件尚未保存，是否保存？", "提示",
                     JOptionPane.YES_NO_CANCEL_OPTION);
             if (option == JOptionPane.CANCEL_OPTION) {
                 return; // 取消操作
@@ -227,7 +175,7 @@ public class Slide {
 
         pages.add(newPage);
 
-        // 添加页面数据
+        // Initialize PageData for the new page
         PageData pageData = new PageData();
         presentation.addPageData(pageData);
 
@@ -235,7 +183,259 @@ public class Slide {
 
         isModified = true;
 
-        JOptionPane.showMessageDialog(frame, "新幻灯片已创建！", "提示", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this, "新幻灯片已创建！", "提示", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    /**
+     * 添加文本框
+     */
+    void addTextBox() {
+        JPanel currentPage = pages.get(curPageIdx);
+
+        JTextPane textPane = new JTextPane();
+        textPane.setSize(200, 50);
+        textPane.setLocation(50, 50);
+        textPane.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        textPane.setFont(new Font("Serif", Font.PLAIN, 16));
+        textPane.setForeground(Color.BLACK);
+
+        // 添加鼠标监听器，支持选取和移动
+        MouseAdapter mouseAdapter = new MouseAdapter() {
+            Point offset;
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                selectedTextBox = (JTextPane) e.getSource();
+                offset = e.getPoint();
+                selectedTextBox.requestFocus();
+                // 高亮选中的文本框
+                selectedTextBox.setBorder(BorderFactory.createLineBorder(Color.BLUE));
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                Point location = selectedTextBox.getLocation();
+                int x = location.x + e.getX() - offset.x;
+                int y = location.y + e.getY() - offset.y;
+                selectedTextBox.setLocation(x, y);
+                isModified = true;
+
+                // 更新 TextBoxData 中的位置
+                int index = getTextBoxIndex(selectedTextBox);
+                if (index != -1) {
+                    TextBoxData data = presentation.getPagesData().get(curPageIdx).getTextBoxes().get(index);
+                    data.setX(x);
+                    data.setY(y);
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                selectedTextBox.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            }
+        };
+
+        textPane.addMouseListener(mouseAdapter);
+        textPane.addMouseMotionListener(mouseAdapter);
+
+        // 添加键盘监听器，更新文本内容
+        textPane.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                isModified = true;
+                int index = getTextBoxIndex(textPane);
+                if (index != -1) {
+                    TextBoxData data = presentation.getPagesData().get(curPageIdx).getTextBoxes().get(index);
+                    data.setTextContent(textPane.getText());
+                }
+            }
+        });
+
+        currentPage.add(textPane);
+        currentPage.repaint();
+
+        // 添加文本框数据到当前页面
+        TextBoxData textBoxData = new TextBoxData(
+                "", 50, 50, 200, 50, "Serif", Font.PLAIN, 16, Color.BLACK);
+        presentation.getPagesData().get(curPageIdx).addTextBoxData(textBoxData);
+
+        isModified = true;
+    }
+
+    /**
+     * 设置字体属性
+     */
+    void setFontProperties() {
+        if (selectedTextBox == null) {
+            JOptionPane.showMessageDialog(this, "请先选择一个文本框！", "提示", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        Font currentFont = selectedTextBox.getFont();
+        Color currentColor = selectedTextBox.getForeground();
+
+        FontChooser fontChooser = new FontChooser(currentFont, currentColor);
+        int result = JOptionPane.showConfirmDialog(this, fontChooser, "选择字体",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (result == JOptionPane.OK_OPTION) {
+            Font selectedFont = fontChooser.getSelectedFont();
+            Color selectedColor = fontChooser.getSelectedColor();
+
+            selectedTextBox.setFont(selectedFont);
+            selectedTextBox.setForeground(selectedColor);
+
+            isModified = true;
+
+            // 更新对应的 TextBoxData
+            int index = getTextBoxIndex(selectedTextBox);
+            if (index != -1) {
+                TextBoxData data = presentation.getPagesData().get(curPageIdx).getTextBoxes().get(index);
+                data.setFontName(selectedFont.getName());
+                data.setFontStyle(selectedFont.getStyle());
+                data.setFontSize(selectedFont.getSize());
+                data.setTextColor(selectedColor);
+            }
+        }
+    }
+
+    /**
+     * 获取文本框在当前页面中的索引
+     */
+    int getTextBoxIndex(JTextPane textPane) {
+        JPanel currentPage = pages.get(curPageIdx);
+        Component[] components = currentPage.getComponents();
+        int textBoxCount = 0;
+        for (Component comp : components) {
+            if (comp instanceof JTextPane) {
+                if (comp == textPane) {
+                    return textBoxCount;
+                }
+                textBoxCount++;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * 添加形状
+     */
+    void addShape(int shapeType) {
+        JPanel currentPage = pages.get(curPageIdx);
+
+        // 弹出颜色选择对话框
+        Color fillColor = JColorChooser.showDialog(this, "选择填充颜色", Color.WHITE);
+        Color borderColor = JColorChooser.showDialog(this, "选择边框颜色", Color.BLACK);
+
+        // 默认大小和位置
+        int x = 50;
+        int y = 50;
+        int width = 100;
+        int height = 100;
+
+        ShapeComponent shapeComp = new ShapeComponent(this, shapeType, x, y, width, height, fillColor, borderColor);
+
+        currentPage.add(shapeComp);
+        currentPage.repaint();
+
+        // 添加 ShapeData 到 PageData
+        ShapeData shapeData = new ShapeData(shapeType, x, y, width, height, fillColor, borderColor, 0);
+        presentation.getPagesData().get(curPageIdx).addShapeData(shapeData);
+
+        isModified = true;
+    }
+
+    /**
+     * 更新 ShapeComponent 的位置到 ShapeData
+     */
+    void updateShapePosition(ShapeComponent shapeComp) {
+        int index = getShapeIndex(shapeComp);
+        if (index != -1) {
+            ShapeData shapeData = presentation.getPagesData().get(curPageIdx).getShapes().get(index);
+            shapeData.setX(shapeComp.getX());
+            shapeData.setY(shapeComp.getY());
+        }
+        isModified = true;
+    }
+
+    /**
+     * 获取形状在当前页面中的索引
+     */
+    int getShapeIndex(ShapeComponent shapeComp) {
+        JPanel currentPage = pages.get(curPageIdx);
+        Component[] components = currentPage.getComponents();
+        int shapeCount = 0;
+        for (Component comp : components) {
+            if (comp instanceof ShapeComponent) {
+                if (comp == shapeComp) {
+                    return shapeCount;
+                }
+                shapeCount++;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * 添加图片
+     */
+    void addImage() {
+        JFileChooser fileChooser = new JFileChooser();
+        int option = fileChooser.showOpenDialog(this);
+        if (option == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            String imagePath = file.getAbsolutePath();
+
+            // 默认大小和位置
+            int x = 50;
+            int y = 50;
+            int width = 200; // 您可以根据需要调整默认大小
+            int height = 150;
+
+            JPanel currentPage = pages.get(curPageIdx);
+
+            ImageComponent imageComp = new ImageComponent(imagePath, x, y, width, height);
+
+            currentPage.add(imageComp);
+            currentPage.repaint();
+
+            // 添加 ImageData 到 PageData
+            ImageData imageData = new ImageData(imagePath, x, y, width, height);
+            presentation.getPagesData().get(curPageIdx).addImageData(imageData);
+
+            isModified = true;
+        }
+    }
+
+    /**
+     * 更新 ImageComponent 的位置到 ImageData
+     */
+    void updateImagePosition(ImageComponent imageComp) {
+        int index = getImageIndex(imageComp);
+        if (index != -1) {
+            ImageData imageData = presentation.getPagesData().get(curPageIdx).getImages().get(index);
+            imageData.setX(imageComp.getX());
+            imageData.setY(imageComp.getY());
+        }
+        isModified = true;
+    }
+
+    /**
+     * 获取图片在当前页面中的索引
+     */
+    int getImageIndex(ImageComponent imageComp) {
+        JPanel currentPage = pages.get(curPageIdx);
+        Component[] components = currentPage.getComponents();
+        int imageCount = 0;
+        for (Component comp : components) {
+            if (comp instanceof ImageComponent) {
+                if (comp == imageComp) {
+                    return imageCount;
+                }
+                imageCount++;
+            }
+        }
+        return -1;
     }
 
     /**
@@ -269,16 +469,16 @@ public class Slide {
         panel.setSize(panel.getPreferredSize());
         panel.validate();
 
-        // 创建图像
+        // 创建页面的图像
         BufferedImage image = new BufferedImage(panel.getWidth(), panel.getHeight(), BufferedImage.TYPE_INT_RGB);
         Graphics2D g2 = image.createGraphics();
         panel.paint(g2);
         g2.dispose();
 
-        // 缩放图像
+        // 缩放图像为缩略图
         Image scaledImage = image.getScaledInstance(width, height, Image.SCALE_SMOOTH);
 
-        // 创建缩略图
+        // 将缩放后的图像转换为 BufferedImage
         BufferedImage thumbnail = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = thumbnail.createGraphics();
         g.drawImage(scaledImage, 0, 0, null);
@@ -291,8 +491,51 @@ public class Slide {
         return thumbnail;
     }
 
+    /**
+     * 显示指定页面
+     */
+    void displayPage(int pageIndex) {
+        if (pageIndex >= 0 && pageIndex < pages.size()) {
+            curPageIdx = pageIndex;
+            mainPanel.removeAll();
+
+            JPanel page = pages.get(pageIndex);
+            page.removeAll(); // 清除现有组件
+
+            selectedShape = null; // 清空当前选中的形状
+            selectedTextBox = null; // 清空当前选中的文本框
 
 
+            // 从 PageData 重建文本框
+            PageData pageData = presentation.getPagesData().get(pageIndex);
+            for (TextBoxData data : pageData.getTextBoxes()) {
+                JTextPane textPane = createTextPaneFromData(data);
+                page.add(textPane);
+            }
+
+            // 重建形状
+            for (ShapeData data : pageData.getShapes()) {
+                ShapeComponent shapeComp = createShapeComponentFromData(data);
+                page.add(shapeComp);
+            }
+
+            // 重建图片
+            for (ImageData data : pageData.getImages()) {
+                ImageComponent imageComp = createImageComponentFromData(data);
+                page.add(imageComp);
+            }
+
+            mainPanel.add(page, BorderLayout.CENTER);
+            mainPanel.revalidate();
+            mainPanel.repaint();
+
+            updateThumbnailBorders();
+        }
+    }
+
+    /**
+     * 从 TextBoxData 创建 JTextPane
+     */
     JTextPane createTextPaneFromData(TextBoxData data) {
         JTextPane textPane = new JTextPane();
         textPane.setText(data.getTextContent());
@@ -301,7 +544,7 @@ public class Slide {
         textPane.setForeground(data.getTextColor());
         textPane.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 
-        // Add mouse listeners for selection and dragging
+        // 添加鼠标监听器，支持选取和移动
         MouseAdapter mouseAdapter = new MouseAdapter() {
             Point offset;
 
@@ -321,7 +564,7 @@ public class Slide {
                 selectedTextBox.setLocation(x, y);
                 isModified = true;
 
-                // Update position in TextBoxData
+                // 更新 TextBoxData 中的位置
                 int index = getTextBoxIndex(selectedTextBox);
                 if (index != -1) {
                     TextBoxData data = presentation.getPagesData().get(curPageIdx).getTextBoxes().get(index);
@@ -339,7 +582,7 @@ public class Slide {
         textPane.addMouseListener(mouseAdapter);
         textPane.addMouseMotionListener(mouseAdapter);
 
-        // Add key listener to update text content in TextBoxData
+        // 添加键盘监听器，更新文本内容
         textPane.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
@@ -355,31 +598,106 @@ public class Slide {
         return textPane;
     }
 
-
     /**
-     * 显示指定页面
+     * 从 ShapeData 创建 ShapeComponent
      */
-    void displayPage(int pageIndex) {
-        if (pageIndex >= 0 && pageIndex < pages.size()) {
-            curPageIdx = pageIndex;
-            mainPanel.removeAll();
+    ShapeComponent createShapeComponentFromData(ShapeData data) {
+        ShapeComponent shapeComp = new ShapeComponent(
+                this,
+                data.getShapeType(),
+                data.getX(),
+                data.getY(),
+                data.getWidth(),
+                data.getHeight(),
+                data.getFillColor(),
+                data.getBorderColor()
+        );
 
-            JPanel page = pages.get(pageIndex);
-            page.removeAll(); // Clear existing components
+        shapeComp.setRotation(data.getRotation());
 
-            // Reconstruct text boxes from PageData
-            PageData pageData = presentation.getPagesData().get(pageIndex);
-            for (TextBoxData data : pageData.getTextBoxes()) {
-                JTextPane textPane = createTextPaneFromData(data);
-                page.add(textPane);
+        // 添加鼠标监听器，支持选取和移动
+        MouseAdapter mouseAdapter = new MouseAdapter() {
+            Point offset;
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                offset = e.getPoint();
+                shapeComp.requestFocus();
+                shapeComp.setSelected(true);
+                selectedShape = shapeComp;
             }
 
-            mainPanel.add(pages.get(pageIndex), BorderLayout.CENTER);
-            mainPanel.revalidate();
-            mainPanel.repaint();
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (shapeComp.getResizingHandle() == ShapeComponent.HANDLE_NONE) {
+                    Point location = shapeComp.getLocation();
+                    int x = location.x + e.getX() - offset.x;
+                    int y = location.y + e.getY() - offset.y;
+                    shapeComp.setLocation(x, y);
+                    isModified = true;
 
-            updateThumbnailBorders();
-        }
+                    // 更新 ShapeData 中的位置
+                    updateShapePosition(shapeComp);
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                shapeComp.setBorder(null);
+            }
+        };
+
+//        shapeComp.addMouseListener(mouseAdapter);
+//        shapeComp.addMouseMotionListener(mouseAdapter);
+
+        return shapeComp;
+    }
+
+    /**
+     * 从 ImageData 创建 ImageComponent
+     */
+    ImageComponent createImageComponentFromData(ImageData data) {
+        ImageComponent imageComp = new ImageComponent(
+                data.getImagePath(),
+                data.getX(),
+                data.getY(),
+                data.getWidth(),
+                data.getHeight()
+        );
+
+        // 添加鼠标监听器，支持移动
+        MouseAdapter mouseAdapter = new MouseAdapter() {
+            Point offset;
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                offset = e.getPoint();
+                imageComp.requestFocus();
+                imageComp.setBorder(BorderFactory.createLineBorder(Color.BLUE));
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                Point location = imageComp.getLocation();
+                int x = location.x + e.getX() - offset.x;
+                int y = location.y + e.getY() - offset.y;
+                imageComp.setLocation(x, y);
+                isModified = true;
+
+                // 更新 ImageData 中的位置
+                updateImagePosition(imageComp);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                imageComp.setBorder(null);
+            }
+        };
+
+        imageComp.addMouseListener(mouseAdapter);
+        imageComp.addMouseMotionListener(mouseAdapter);
+
+        return imageComp;
     }
 
     /**
@@ -432,12 +750,21 @@ public class Slide {
             addEmptyPage();
         });
 
-        JMenuItem item4 = new JMenuItem("图片");
+        JMenuItem itemImage = new JMenuItem("图片");
         JMenu subMenu = new JMenu("形状");
         JMenuItem shape1 = new JMenuItem("直线");
         JMenuItem shape2 = new JMenuItem("矩形");
         JMenuItem shape3 = new JMenuItem("圆");
         JMenuItem shape4 = new JMenuItem("椭圆");
+
+        // 添加形状的动作监听器
+        shape1.addActionListener(e -> addShape(ShapeData.TYPE_LINE));
+        shape2.addActionListener(e -> addShape(ShapeData.TYPE_RECTANGLE));
+        shape3.addActionListener(e -> addShape(ShapeData.TYPE_CIRCLE));
+        shape4.addActionListener(e -> addShape(ShapeData.TYPE_ELLIPSE));
+
+        // 添加插入图片的动作监听器
+        itemImage.addActionListener(e -> addImage());
 
         menu1.add(itemNew);
         menu1.add(itemOpen);
@@ -445,7 +772,7 @@ public class Slide {
 
         menu2.add(newSlide);
 
-        menu3.add(item4);
+        menu3.add(itemImage);
         subMenu.add(shape1);
         subMenu.add(shape2);
         subMenu.add(shape3);
@@ -457,7 +784,7 @@ public class Slide {
         mb.add(menu2);
         mb.add(menu3);
 
-        frame.setJMenuBar(mb);
+        setJMenuBar(mb);
     }
 
     /**
@@ -466,7 +793,7 @@ public class Slide {
     boolean savePresentation() {
         if (currentFile == null) {
             JFileChooser fileChooser = new JFileChooser();
-            int option = fileChooser.showSaveDialog(frame);
+            int option = fileChooser.showSaveDialog(this);
             if (option == JFileChooser.APPROVE_OPTION) {
                 currentFile = fileChooser.getSelectedFile();
             } else {
@@ -477,11 +804,11 @@ public class Slide {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(currentFile))) {
             oos.writeObject(presentation);
             isModified = false;
-            JOptionPane.showMessageDialog(frame, "保存成功！", "提示", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "保存成功！", "提示", JOptionPane.INFORMATION_MESSAGE);
             return true;
         } catch (IOException e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(frame, "保存失败！", "错误", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "保存失败！", "错误", JOptionPane.ERROR_MESSAGE);
             return false;
         }
     }
@@ -491,7 +818,7 @@ public class Slide {
      */
     void openPresentation() {
         if (isModified) {
-            int option = JOptionPane.showConfirmDialog(frame, "当前文件尚未保存，是否保存？", "提示",
+            int option = JOptionPane.showConfirmDialog(this, "当前文件尚未保存，是否保存？", "提示",
                     JOptionPane.YES_NO_CANCEL_OPTION);
             if (option == JOptionPane.CANCEL_OPTION) {
                 return;
@@ -503,7 +830,7 @@ public class Slide {
         }
 
         JFileChooser fileChooser = new JFileChooser();
-        int option = fileChooser.showOpenDialog(frame);
+        int option = fileChooser.showOpenDialog(this);
         if (option == JFileChooser.APPROVE_OPTION) {
             currentFile = fileChooser.getSelectedFile();
 
@@ -523,10 +850,23 @@ public class Slide {
                     newPage.setSize(newPage.getPreferredSize());
                     newPage.validate();
 
+                    // 重建文本框
                     PageData pageData = presentation.getPagesData().get(i);
                     for (TextBoxData data : pageData.getTextBoxes()) {
                         JTextPane textPane = createTextPaneFromData(data);
                         newPage.add(textPane);
+                    }
+
+                    // 重建形状
+                    for (ShapeData data : pageData.getShapes()) {
+                        ShapeComponent shapeComp = createShapeComponentFromData(data);
+                        newPage.add(shapeComp);
+                    }
+
+                    // 重建图片
+                    for (ImageData data : pageData.getImages()) {
+                        ImageComponent imageComp = createImageComponentFromData(data);
+                        newPage.add(imageComp);
                     }
 
                     pages.add(newPage);
@@ -538,19 +878,15 @@ public class Slide {
                     displayPage(curPageIdx);
                 }
 
-                JOptionPane.showMessageDialog(frame, "打开成功！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "打开成功！", "提示", JOptionPane.INFORMATION_MESSAGE);
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
-                JOptionPane.showMessageDialog(frame, "打开失败！", "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "打开失败！", "错误", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
     public static void main(String[] args) {
-        Slide jFrame = new Slide();
-        jFrame.setFrame();
-        jFrame.setMenu();
-        jFrame.createNewSlide();
-        jFrame.show();
+        new Slide();
     }
 }
