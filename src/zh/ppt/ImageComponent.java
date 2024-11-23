@@ -11,7 +11,7 @@ public class ImageComponent extends JComponent {
     private BufferedImage image;
     private String imagePath;
 
-    public ImageComponent(String imagePath, int x, int y, int width, int height) {
+    public ImageComponent(Slide slide, String imagePath, int x, int y, int width, int height) {
         this.imagePath = imagePath;
         try {
             image = ImageIO.read(new File(imagePath));
@@ -32,6 +32,9 @@ public class ImageComponent extends JComponent {
                 offset = e.getPoint();
                 requestFocus();
                 setBorder(BorderFactory.createLineBorder(Color.BLUE));
+                if (slide != null) {
+                    slide.updateThumbnail(slide.getCurPageIdx());
+                }
             }
 
             @Override

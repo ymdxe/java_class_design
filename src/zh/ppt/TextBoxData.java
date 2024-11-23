@@ -26,7 +26,6 @@ public class TextBoxData implements Serializable {
         this.textColor = textColor;
     }
 
-    // Getters and setters
     public String getTextContent() { return textContent; }
     public void setTextContent(String textContent) { this.textContent = textContent; }
 

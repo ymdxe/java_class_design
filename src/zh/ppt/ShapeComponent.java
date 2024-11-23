@@ -100,6 +100,10 @@ public class ShapeComponent extends JComponent {
                 resizingHandle = HANDLE_NONE;
                 offset = null;
                 repaint();
+
+                if (slide != null) {
+                    slide.updateThumbnail(slide.getCurPageIdx());
+                }
             }
 
             @Override
@@ -125,6 +129,8 @@ public class ShapeComponent extends JComponent {
                 }
             }
         });
+
+
 
         // 获得焦点以接收键盘事件
         setFocusable(true);

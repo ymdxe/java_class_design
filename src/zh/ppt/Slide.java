@@ -125,6 +125,11 @@ public class Slide extends JFrame {
         isModified = true;
     }
 
+    int getCurPageIdx() {
+        return curPageIdx;
+    }
+
+
     /**
      * 显示窗体
      */
@@ -258,7 +263,7 @@ public class Slide extends JFrame {
         TextBoxData textBoxData = new TextBoxData(
                 "", 50, 50, 200, 50, "Serif", Font.PLAIN, 16, Color.BLACK);
         presentation.getPagesData().get(curPageIdx).addTextBoxData(textBoxData);
-
+        updateThumbnail(curPageIdx);
         isModified = true;
     }
 
@@ -341,7 +346,7 @@ public class Slide extends JFrame {
         // 添加 ShapeData 到 PageData
         ShapeData shapeData = new ShapeData(shapeType, x, y, width, height, fillColor, borderColor, 0);
         presentation.getPagesData().get(curPageIdx).addShapeData(shapeData);
-
+        updateThumbnail(curPageIdx);
         isModified = true;
     }
 
@@ -394,7 +399,7 @@ public class Slide extends JFrame {
 
             JPanel currentPage = pages.get(curPageIdx);
 
-            ImageComponent imageComp = new ImageComponent(imagePath, x, y, width, height);
+            ImageComponent imageComp = new ImageComponent(this, imagePath, x, y, width, height);
 
             currentPage.add(imageComp);
             currentPage.repaint();
@@ -402,7 +407,7 @@ public class Slide extends JFrame {
             // 添加 ImageData 到 PageData
             ImageData imageData = new ImageData(imagePath, x, y, width, height);
             presentation.getPagesData().get(curPageIdx).addImageData(imageData);
-
+            updateThumbnail(curPageIdx);
             isModified = true;
         }
     }
@@ -658,6 +663,7 @@ public class Slide extends JFrame {
      */
     ImageComponent createImageComponentFromData(ImageData data) {
         ImageComponent imageComp = new ImageComponent(
+                this,
                 data.getImagePath(),
                 data.getX(),
                 data.getY(),
@@ -715,6 +721,28 @@ public class Slide extends JFrame {
                     label.setBorder(BorderFactory.createLineBorder(Color.BLACK));
                 }
                 thumbnailIndex++;
+            }
+        }
+    }
+    /**
+     * 更新指定页面的缩略图
+     */
+    void updateThumbnail(int pageIndex) {
+        if (pageIndex >= 0 && pageIndex < pages.size()) {
+            JPanel page = pages.get(pageIndex);
+            BufferedImage thumbnailImage = createThumbnail(page, 160, 120);
+
+            // 更新 edgePanel 中对应的缩略图
+            int labelIndex = pageIndex * 2; // 因为 edgePanel 中每个缩略图后面还有一个垂直间距组件
+
+            if (labelIndex < edgePanel.getComponentCount()) {
+                Component comp = edgePanel.getComponent(labelIndex);
+                if (comp instanceof JLabel) {
+                    JLabel thumbnailLabel = (JLabel) comp;
+                    thumbnailLabel.setIcon(new ImageIcon(thumbnailImage));
+                    thumbnailLabel.revalidate();
+                    thumbnailLabel.repaint();
+                }
             }
         }
     }
