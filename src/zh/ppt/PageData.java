@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 public class PageData implements Serializable {
-    private static final long serialVersionUID = 1L;
 
     private ArrayList<TextBoxData> textBoxes;
     private ArrayList<ShapeData> shapes;
@@ -24,10 +23,6 @@ public class PageData implements Serializable {
         return textBoxes;
     }
 
-    public void setTextBoxes(ArrayList<TextBoxData> textBoxes) {
-        this.textBoxes = textBoxes;
-    }
-
     // 形状相关方法
     public void addShapeData(ShapeData shapeData) {
         shapes.add(shapeData);
@@ -35,10 +30,6 @@ public class PageData implements Serializable {
 
     public ArrayList<ShapeData> getShapes() {
         return shapes;
-    }
-
-    public void setShapes(ArrayList<ShapeData> shapes) {
-        this.shapes = shapes;
     }
 
     // 图片相关方法
@@ -50,7 +41,4 @@ public class PageData implements Serializable {
         return images;
     }
 
-    public void setImages(ArrayList<ImageData> images) {
-        this.images = images;
-    }
 }

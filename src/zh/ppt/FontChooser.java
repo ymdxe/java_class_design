@@ -10,31 +10,31 @@ public class FontChooser extends JPanel {
     private JButton colorButton;
     private Color selectedColor;
 
-    public FontChooser(Font initialFont, Color initialColor) {
+    public FontChooser(Font initFont, Color initColor) {
         setLayout(new GridLayout(4, 2));
 
         add(new JLabel("字体："));
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         String[] fonts = ge.getAvailableFontFamilyNames();
         fontFamilyCombo = new JComboBox<>(fonts);
-        fontFamilyCombo.setSelectedItem(initialFont.getFamily());
+        fontFamilyCombo.setSelectedItem(initFont.getFamily());
         add(fontFamilyCombo);
 
         add(new JLabel("大小："));
         Integer[] sizes = {8, 10, 12, 14, 16, 18, 24, 32, 48};
         fontSizeCombo = new JComboBox<>(sizes);
-        fontSizeCombo.setSelectedItem(initialFont.getSize());
+        fontSizeCombo.setSelectedItem(initFont.getSize());
         add(fontSizeCombo);
 
         add(new JLabel("风格："));
         String[] styles = {"常规", "粗体", "斜体"};
         fontStyleCombo = new JComboBox<>(styles);
-        fontStyleCombo.setSelectedIndex(initialFont.getStyle());
+        fontStyleCombo.setSelectedIndex(initFont.getStyle());
         add(fontStyleCombo);
         
         add(new JLabel("颜色："));
         colorButton = new JButton();
-        colorButton.setBackground(initialColor);
+        colorButton.setBackground(initColor);
         colorButton.addActionListener(e -> {
             Color color = JColorChooser.showDialog(this, "选择颜色", selectedColor);
             if (color != null) {
@@ -44,7 +44,7 @@ public class FontChooser extends JPanel {
         });
         add(colorButton);
 
-        selectedColor = initialColor;
+        selectedColor = initColor;
     }
 
     public Font getSelectedFont() {

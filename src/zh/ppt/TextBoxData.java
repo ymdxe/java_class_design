@@ -4,7 +4,6 @@ import java.awt.*;
 import java.io.Serializable;
 
 public class TextBoxData implements Serializable {
-    private static final long serialVersionUID = 1L;
 
     private String textContent;
     private int x, y, width, height;
@@ -36,10 +35,8 @@ public class TextBoxData implements Serializable {
     public void setY(int y) { this.y = y; }
 
     public int getWidth() { return width; }
-    public void setWidth(int width) { this.width = width; }
 
     public int getHeight() { return height; }
-    public void setHeight(int height) { this.height = height; }
 
     public String getFontName() { return fontName; }
     public void setFontName(String fontName) { this.fontName = fontName; }

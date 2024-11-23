@@ -346,7 +346,7 @@ public class Slide extends JFrame {
         currentPage.repaint();
 
         // 添加 ShapeData 到 PageData
-        ShapeData shapeData = new ShapeData(shapeType, x, y, width, height, fillColor, borderColor, 0);
+        ShapeData shapeData = new ShapeData(shapeType, x, y, width, height, fillColor, borderColor);
         showPPT.getPagesData().get(curPageIdx).addShapeData(shapeData);
         updateThumbnail(curPageIdx);
         isModified = true;

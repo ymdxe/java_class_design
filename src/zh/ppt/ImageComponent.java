@@ -76,8 +76,5 @@ public class ImageComponent extends JComponent {
             g.drawImage(image, 0, 0, this);
         }
     }
-    public BufferedImage getImage() { return image; }
-    public void setImage(BufferedImage image) { this.image = image; repaint(); }
 
-    public String getImagePath() { return imagePath; }
 }

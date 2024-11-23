@@ -10,7 +10,6 @@ public class ShapeComponent extends JComponent {
     private Color fillColor;
     private Color borderColor;
     private boolean isSelected = false; // 是否被选中
-    private double rotation = 0; // 旋转角度，单位为弧度
 
     // 调整句柄的大小
     private static final int HANDLE_SIZE = 8;
@@ -24,7 +23,6 @@ public class ShapeComponent extends JComponent {
     private static final int HANDLE_NE = 1;
     private static final int HANDLE_SW = 2;
     private static final int HANDLE_SE = 3;
-    private static final int HANDLE_ROTATE = 4;
 
     // 添加偏移量变量
     private Point offset;
@@ -116,7 +114,7 @@ public class ShapeComponent extends JComponent {
             public void mouseDragged(MouseEvent e) {
                 if (resizingHandle != HANDLE_NONE) {
                     // 正在调整大小或旋转
-                    resizeOrRotate(e.getPoint());
+                    resizeShape(e.getPoint());
                 } else if (offset != null) {
                     // 正在拖拽移动
                     int x = getX() + e.getX() - offset.x;
@@ -157,7 +155,6 @@ public class ShapeComponent extends JComponent {
         int w = getWidth();
         int h = getHeight();
         g2.translate(w / 2, h / 2);
-        g2.rotate(rotation);
 
         switch (shapeType) {
             case ShapeData.TYPE_LINE:
@@ -218,7 +215,6 @@ public class ShapeComponent extends JComponent {
         Rectangle handleNE = new Rectangle(w - HANDLE_SIZE / 2, 0 - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE);
         Rectangle handleSW = new Rectangle(0 - HANDLE_SIZE / 2, h - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE);
         Rectangle handleSE = new Rectangle(w - HANDLE_SIZE / 2, h - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE);
-        Ellipse2D handleRotate = new Ellipse2D.Float(w / 2 - HANDLE_SIZE / 2, 0 - HANDLE_SIZE * 2, HANDLE_SIZE, HANDLE_SIZE);
 
         if (handleNW.contains(p)) {
             return HANDLE_NW;
@@ -228,23 +224,22 @@ public class ShapeComponent extends JComponent {
             return HANDLE_SW;
         } else if (handleSE.contains(p)) {
             return HANDLE_SE;
-        } else if (handleRotate.contains(p)) {
-            return HANDLE_ROTATE;
         } else {
             return HANDLE_NONE;
         }
     }
 
-    private void resizeOrRotate(Point p) {
+    private void resizeShape(Point p) {
         int x = getX();
         int y = getY();
         int w = getWidth();
         int h = getHeight();
 
+        int newW, newH;
         switch (resizingHandle) {
             case HANDLE_NW:
-                int newW = w + x - (x + p.x);
-                int newH = h + y - (y + p.y);
+                newW = w + x - (x + p.x);
+                newH = h + y - (y + p.y);
                 setBounds(x + p.x, y + p.y, newW, newH);
                 break;
             case HANDLE_NE:
@@ -262,18 +257,8 @@ public class ShapeComponent extends JComponent {
                 newH = p.y;
                 setSize(newW, newH);
                 break;
-            case HANDLE_ROTATE:
-                // 计算旋转角度
-                double centerX = w / 2;
-                double centerY = h / 2;
-                double deltaX = p.x - centerX;
-                double deltaY = p.y - centerY;
-                rotation = Math.atan2(deltaY, deltaX);
-                repaint();
-                break;
         }
 
-//        updateShapeDataSizeAndRotation();
     }
     // 更新 ShapeData 中的位置
     private void updateShapePos() {
@@ -309,22 +294,8 @@ public class ShapeComponent extends JComponent {
         isSelected = selected;
         repaint();
     }
-
-    public boolean isSelected() {
-        return isSelected;
-    }
-
-    // Getter 和 Setter
-    public double getRotation() { return rotation; }
-    public void setRotation(double rotation) { this.rotation = rotation; repaint(); }
-
-    // Getters and setters
-    public int getShapeType() { return shapeType; }
-    public void setShapeType(int shapeType) { this.shapeType = shapeType; repaint(); }
-
+    
     public Color getFillColor() { return fillColor; }
     public void setFillColor(Color fillColor) { this.fillColor = fillColor; repaint(); }
 
-    public Color getBorderColor() { return borderColor; }
-    public void setBorderColor(Color borderColor) { this.borderColor = borderColor; repaint(); }
 }
