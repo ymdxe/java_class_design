@@ -122,7 +122,6 @@ public class Slide extends JFrame {
             ShapeData shapeData = showPPT.getPagesData().get(curPageIdx).getShapes().get(index);
             shapeData.setWidth(shapeComp.getWidth());
             shapeData.setHeight(shapeComp.getHeight());
-            shapeData.setRotation(shapeComp.getRotation());
         }
         isModified = true;
     }
@@ -618,41 +617,6 @@ public class Slide extends JFrame {
                 data.getFillColor(),
                 data.getBorderColor()
         );
-
-        shapeComp.setRotation(data.getRotation());
-
-        MouseAdapter mouseAdapter = new MouseAdapter() {
-            Point offset;
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                offset = e.getPoint();
-                shapeComp.requestFocus();
-                shapeComp.setSelected(true);
-                selectedShape = shapeComp;
-            }
-
-            @Override
-            public void mouseDragged(MouseEvent e) {
-                if (shapeComp.getResizingHandle() == ShapeComponent.HANDLE_NONE) {
-                    Point location = shapeComp.getLocation();
-                    int x = location.x + e.getX() - offset.x;
-                    int y = location.y + e.getY() - offset.y;
-                    shapeComp.setLocation(x, y);
-                    isModified = true;
-
-                    updateShapePosition(shapeComp);
-                }
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                shapeComp.setBorder(null);
-            }
-        };
-
-//        shapeComp.addMouseListener(mouseAdapter);
-//        shapeComp.addMouseMotionListener(mouseAdapter);
 
         return shapeComp;
     }
