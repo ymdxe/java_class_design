@@ -13,7 +13,6 @@ public class FontChooser extends JPanel {
     public FontChooser(Font initialFont, Color initialColor) {
         setLayout(new GridLayout(4, 2));
 
-        // Font family
         add(new JLabel("字体："));
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         String[] fonts = ge.getAvailableFontFamilyNames();
@@ -21,21 +20,18 @@ public class FontChooser extends JPanel {
         fontFamilyCombo.setSelectedItem(initialFont.getFamily());
         add(fontFamilyCombo);
 
-        // Font size
         add(new JLabel("大小："));
         Integer[] sizes = {8, 10, 12, 14, 16, 18, 24, 32, 48};
         fontSizeCombo = new JComboBox<>(sizes);
         fontSizeCombo.setSelectedItem(initialFont.getSize());
         add(fontSizeCombo);
 
-        // Font style
         add(new JLabel("风格："));
         String[] styles = {"常规", "粗体", "斜体"};
         fontStyleCombo = new JComboBox<>(styles);
         fontStyleCombo.setSelectedIndex(initialFont.getStyle());
         add(fontStyleCombo);
-
-        // Text color
+        
         add(new JLabel("颜色："));
         colorButton = new JButton();
         colorButton.setBackground(initialColor);

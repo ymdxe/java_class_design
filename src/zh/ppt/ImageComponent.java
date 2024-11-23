@@ -22,8 +22,6 @@ public class ImageComponent extends JComponent {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        // 添加鼠标监听器，支持移动
         MouseAdapter mouseAdapter = new MouseAdapter() {
             Point offset;
 
@@ -78,8 +76,6 @@ public class ImageComponent extends JComponent {
             g.drawImage(image, 0, 0, this);
         }
     }
-
-    // Getters and setters
     public BufferedImage getImage() { return image; }
     public void setImage(BufferedImage image) { this.image = image; repaint(); }
 

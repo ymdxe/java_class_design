@@ -16,7 +16,6 @@ public class ImageData implements Serializable {
         this.height = height;
     }
 
-    // Getters and setters
     public String getImagePath() { return imagePath; }
     public void setImagePath(String imagePath) { this.imagePath = imagePath; }
 
