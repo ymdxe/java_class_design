@@ -1,3 +1,11 @@
-打包下载后，运行Slide.java即可
-可根据页面的提示进行一系列操作
+操作系统：Windows11
+JDK版本：Java JDK 21.0.4
 
+源代码编译方法：
+使用PowerShell 在src的根目录下执行 
+
+> javac -d out (Get-ChildItem -Recurse -Filter *.java | ForEach-Object { $_.FullName })
+
+编译成功后，按如下操作执行字节码
+> cd out
+> java zh.ppt.main.Slide 

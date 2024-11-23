@@ -1,4 +1,7 @@
-package zh.ppt;
+package zh.ppt.component;
+
+import zh.ppt.data.ShapeData;
+import zh.ppt.main.Slide;
 
 import javax.swing.*;
 import java.awt.*;

@@ -1,4 +1,4 @@
-package zh.ppt;
+package zh.ppt.data;
 
 import java.io.Serializable;
 

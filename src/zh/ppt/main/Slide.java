@@ -1,4 +1,7 @@
-package zh.ppt;
+package zh.ppt.main;
+import zh.ppt.component.ImageComponent;
+import zh.ppt.component.ShapeComponent;
+import zh.ppt.data.*;
 
 import java.awt.*;
 import java.awt.color.ColorSpace;
@@ -8,7 +11,6 @@ import java.awt.image.ColorConvertOp;
 import java.io.*;
 import java.util.ArrayList;
 import javax.swing.*;
-import javax.swing.text.*;
 
 public class Slide extends JFrame {
 
@@ -126,7 +128,7 @@ public class Slide extends JFrame {
         isModified = true;
     }
 
-    int getCurPageIdx() {
+    public int getCurPageIdx() {
         return curPageIdx;
     }
 
@@ -280,7 +282,7 @@ public class Slide extends JFrame {
         Font curFont = selectedTextBox.getFont();
         Color curColor = selectedTextBox.getForeground();
 
-        FontChooser fontChooser = new FontChooser(curFont, curColor);
+        ImageComponent.FontChooser fontChooser = new ImageComponent.FontChooser(curFont, curColor);
         int result = JOptionPane.showConfirmDialog(this, fontChooser, "选择字体",
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
@@ -354,7 +356,7 @@ public class Slide extends JFrame {
     /**
      * 更新 ShapeComponent 的位置到 ShapeData
      */
-    void updateShapePosition(ShapeComponent shapeComp) {
+    public void updateShapePosition(ShapeComponent shapeComp) {
         int index = getShapeIndex(shapeComp);
         if (index != -1) {
             ShapeData shapeData = showPPT.getPagesData().get(curPageIdx).getShapes().get(index);
@@ -416,7 +418,7 @@ public class Slide extends JFrame {
     /**
      * 更新 ImageComponent 的位置到 ImageData
      */
-    void updateImagePosition(ImageComponent imageComp) {
+    public void updateImagePosition(ImageComponent imageComp) {
         int index = getImageIndex(imageComp);
         if (index != -1) {
             ImageData imageData = showPPT.getPagesData().get(curPageIdx).getImages().get(index);
@@ -688,7 +690,7 @@ public class Slide extends JFrame {
     /**
      * 更新指定页面的缩略图
      */
-    void updateThumbnail(int pageIndex) {
+    public void updateThumbnail(int pageIndex) {
         if (pageIndex >= 0 && pageIndex < pages.size()) {
             JPanel page = pages.get(pageIndex);
             BufferedImage thumbnailImage = createThumbnail(page, 160, 120);
