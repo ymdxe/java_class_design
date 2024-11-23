@@ -18,17 +18,21 @@ public class Slide extends JFrame {
     ArrayList<JPanel> pages; // 存储幻灯片页面的列表
     int curPageIdx = 0;      // 当前页面索引
 
-    Presentation presentation;   // 当前演示文稿
+    Presentation showPPT;   // 当前演示文稿
     boolean isModified = false;  // 是否有未保存的修改
     File currentFile = null;     // 当前文件
 
-    JButton addTextBoxButton; // 添加文本框按钮
-    JButton setFontButton;    // 设置字体按钮
+    JButton addTextBoxBut; // 添加文本框按钮
+    JButton setFontBut;    // 设置字体按钮
     JTextPane selectedTextBox; // 当前选中的文本框
+   
+    JButton setShapeColorBut;   // 添加一个按钮，用于修改形状填充颜色
+    ShapeComponent selectedShape;     // 当前选中的形状
+
 
     public Slide() {
         pages = new ArrayList<>();
-        presentation = new Presentation();
+        showPPT = new Presentation();
         setFrame();
         setMenu();
         createNewSlide();
@@ -39,11 +43,7 @@ public class Slide extends JFrame {
         this.selectedShape = shape;
     }
 
-    // 添加一个按钮，用于修改形状填充颜色
-    JButton setShapeFillColorButton;
 
-    // 当前选中的形状
-    ShapeComponent selectedShape;
     /**
      * 设置窗体
      */
@@ -60,10 +60,12 @@ public class Slide extends JFrame {
         mainPanel = new JPanel(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
 
+        // 初始化缩略图
         edgePanel = new JPanel();
         edgePanel.setLayout(new BoxLayout(edgePanel, BoxLayout.Y_AXIS));
         edgePanel.setBackground(Color.LIGHT_GRAY);
 
+        // 滚动区域
         edgeScrollPane = new JScrollPane(edgePanel);
         edgeScrollPane.setPreferredSize(new Dimension(200, getHeight()));
         add(edgeScrollPane, BorderLayout.WEST);
@@ -73,17 +75,17 @@ public class Slide extends JFrame {
         // 创建工具栏
         JToolBar toolBar = new JToolBar();
 
-        addTextBoxButton = new JButton("添加文本框");
-        addTextBoxButton.addActionListener(e -> addTextBox());
-        toolBar.add(addTextBoxButton);
+        addTextBoxBut = new JButton("添加文本框");
+        addTextBoxBut.addActionListener(e -> addTextBox());
+        toolBar.add(addTextBoxBut);
 
-        setFontButton = new JButton("设置字体");
-        setFontButton.addActionListener(e -> setFontProperties());
-        toolBar.add(setFontButton);
+        setFontBut = new JButton("设置字体");
+        setFontBut.addActionListener(e -> setFont());
+        toolBar.add(setFontBut);
 
-        setShapeFillColorButton = new JButton("修改形状填充颜色");
-        setShapeFillColorButton.addActionListener(e -> setShapeFillColor());
-        toolBar.add(setShapeFillColorButton);
+        setShapeColorBut = new JButton("修改形状填充颜色");
+        setShapeColorBut.addActionListener(e -> setShapeFillColor());
+        toolBar.add(setShapeColorBut);
 
 
         add(toolBar, BorderLayout.NORTH);
@@ -108,7 +110,7 @@ public class Slide extends JFrame {
     void updateShapeFillColor(ShapeComponent shapeComp) {
         int index = getShapeIndex(shapeComp);
         if (index != -1) {
-            ShapeData shapeData = presentation.getPagesData().get(curPageIdx).getShapes().get(index);
+            ShapeData shapeData = showPPT.getPagesData().get(curPageIdx).getShapes().get(index);
             shapeData.setFillColor(shapeComp.getFillColor());
         }
         isModified = true;
@@ -117,7 +119,7 @@ public class Slide extends JFrame {
     void updateShapeSizeAndRotation(ShapeComponent shapeComp) {
         int index = getShapeIndex(shapeComp);
         if (index != -1) {
-            ShapeData shapeData = presentation.getPagesData().get(curPageIdx).getShapes().get(index);
+            ShapeData shapeData = showPPT.getPagesData().get(curPageIdx).getShapes().get(index);
             shapeData.setWidth(shapeComp.getWidth());
             shapeData.setHeight(shapeComp.getHeight());
             shapeData.setRotation(shapeComp.getRotation());
@@ -157,7 +159,7 @@ public class Slide extends JFrame {
         pages.clear();
         edgePanel.removeAll();
         curPageIdx = 0;
-        presentation.clear();
+        showPPT.clear();
         currentFile = null;
         isModified = false;
 
@@ -182,7 +184,7 @@ public class Slide extends JFrame {
 
         // Initialize PageData for the new page
         PageData pageData = new PageData();
-        presentation.addPageData(pageData);
+        showPPT.addPageData(pageData);
 
         addThumbnail(newPage, pages.size() - 1);
 
@@ -228,7 +230,7 @@ public class Slide extends JFrame {
                 // 更新 TextBoxData 中的位置
                 int index = getTextBoxIndex(selectedTextBox);
                 if (index != -1) {
-                    TextBoxData data = presentation.getPagesData().get(curPageIdx).getTextBoxes().get(index);
+                    TextBoxData data = showPPT.getPagesData().get(curPageIdx).getTextBoxes().get(index);
                     data.setX(x);
                     data.setY(y);
                 }
@@ -250,7 +252,7 @@ public class Slide extends JFrame {
                 isModified = true;
                 int index = getTextBoxIndex(textPane);
                 if (index != -1) {
-                    TextBoxData data = presentation.getPagesData().get(curPageIdx).getTextBoxes().get(index);
+                    TextBoxData data = showPPT.getPagesData().get(curPageIdx).getTextBoxes().get(index);
                     data.setTextContent(textPane.getText());
                 }
             }
@@ -262,7 +264,7 @@ public class Slide extends JFrame {
         // 添加文本框数据到当前页面
         TextBoxData textBoxData = new TextBoxData(
                 "", 50, 50, 200, 50, "Serif", Font.PLAIN, 16, Color.BLACK);
-        presentation.getPagesData().get(curPageIdx).addTextBoxData(textBoxData);
+        showPPT.getPagesData().get(curPageIdx).addTextBoxData(textBoxData);
         updateThumbnail(curPageIdx);
         isModified = true;
     }
@@ -270,16 +272,16 @@ public class Slide extends JFrame {
     /**
      * 设置字体属性
      */
-    void setFontProperties() {
+    void setFont() {
         if (selectedTextBox == null) {
             JOptionPane.showMessageDialog(this, "请先选择一个文本框！", "提示", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        Font currentFont = selectedTextBox.getFont();
-        Color currentColor = selectedTextBox.getForeground();
+        Font curFont = selectedTextBox.getFont();
+        Color curColor = selectedTextBox.getForeground();
 
-        FontChooser fontChooser = new FontChooser(currentFont, currentColor);
+        FontChooser fontChooser = new FontChooser(curFont, curColor);
         int result = JOptionPane.showConfirmDialog(this, fontChooser, "选择字体",
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
@@ -295,7 +297,7 @@ public class Slide extends JFrame {
             // 更新对应的 TextBoxData
             int index = getTextBoxIndex(selectedTextBox);
             if (index != -1) {
-                TextBoxData data = presentation.getPagesData().get(curPageIdx).getTextBoxes().get(index);
+                TextBoxData data = showPPT.getPagesData().get(curPageIdx).getTextBoxes().get(index);
                 data.setFontName(selectedFont.getName());
                 data.setFontStyle(selectedFont.getStyle());
                 data.setFontSize(selectedFont.getSize());
@@ -345,7 +347,7 @@ public class Slide extends JFrame {
 
         // 添加 ShapeData 到 PageData
         ShapeData shapeData = new ShapeData(shapeType, x, y, width, height, fillColor, borderColor, 0);
-        presentation.getPagesData().get(curPageIdx).addShapeData(shapeData);
+        showPPT.getPagesData().get(curPageIdx).addShapeData(shapeData);
         updateThumbnail(curPageIdx);
         isModified = true;
     }
@@ -356,7 +358,7 @@ public class Slide extends JFrame {
     void updateShapePosition(ShapeComponent shapeComp) {
         int index = getShapeIndex(shapeComp);
         if (index != -1) {
-            ShapeData shapeData = presentation.getPagesData().get(curPageIdx).getShapes().get(index);
+            ShapeData shapeData = showPPT.getPagesData().get(curPageIdx).getShapes().get(index);
             shapeData.setX(shapeComp.getX());
             shapeData.setY(shapeComp.getY());
         }
@@ -394,7 +396,7 @@ public class Slide extends JFrame {
             // 默认大小和位置
             int x = 50;
             int y = 50;
-            int width = 200; // 您可以根据需要调整默认大小
+            int width = 200;
             int height = 150;
 
             JPanel currentPage = pages.get(curPageIdx);
@@ -406,7 +408,7 @@ public class Slide extends JFrame {
 
             // 添加 ImageData 到 PageData
             ImageData imageData = new ImageData(imagePath, x, y, width, height);
-            presentation.getPagesData().get(curPageIdx).addImageData(imageData);
+            showPPT.getPagesData().get(curPageIdx).addImageData(imageData);
             updateThumbnail(curPageIdx);
             isModified = true;
         }
@@ -418,7 +420,7 @@ public class Slide extends JFrame {
     void updateImagePosition(ImageComponent imageComp) {
         int index = getImageIndex(imageComp);
         if (index != -1) {
-            ImageData imageData = presentation.getPagesData().get(curPageIdx).getImages().get(index);
+            ImageData imageData = showPPT.getPagesData().get(curPageIdx).getImages().get(index);
             imageData.setX(imageComp.getX());
             imageData.setY(imageComp.getY());
         }
@@ -512,9 +514,9 @@ public class Slide extends JFrame {
 
 
             // 从 PageData 重建文本框
-            PageData pageData = presentation.getPagesData().get(pageIndex);
+            PageData pageData = showPPT.getPagesData().get(pageIndex);
             for (TextBoxData data : pageData.getTextBoxes()) {
-                JTextPane textPane = createTextPaneFromData(data);
+                JTextPane textPane = createTextPane(data);
                 page.add(textPane);
             }
 
@@ -526,7 +528,7 @@ public class Slide extends JFrame {
 
             // 重建图片
             for (ImageData data : pageData.getImages()) {
-                ImageComponent imageComp = createImageComponentFromData(data);
+                ImageComponent imageComp = createImageComponent(data);
                 page.add(imageComp);
             }
 
@@ -541,7 +543,7 @@ public class Slide extends JFrame {
     /**
      * 从 TextBoxData 创建 JTextPane
      */
-    JTextPane createTextPaneFromData(TextBoxData data) {
+    JTextPane createTextPane(TextBoxData data) {
         JTextPane textPane = new JTextPane();
         textPane.setText(data.getTextContent());
         textPane.setBounds(data.getX(), data.getY(), data.getWidth(), data.getHeight());
@@ -549,7 +551,7 @@ public class Slide extends JFrame {
         textPane.setForeground(data.getTextColor());
         textPane.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 
-        // 添加鼠标监听器，支持选取和移动
+
         MouseAdapter mouseAdapter = new MouseAdapter() {
             Point offset;
 
@@ -572,7 +574,7 @@ public class Slide extends JFrame {
                 // 更新 TextBoxData 中的位置
                 int index = getTextBoxIndex(selectedTextBox);
                 if (index != -1) {
-                    TextBoxData data = presentation.getPagesData().get(curPageIdx).getTextBoxes().get(index);
+                    TextBoxData data = showPPT.getPagesData().get(curPageIdx).getTextBoxes().get(index);
                     data.setX(x);
                     data.setY(y);
                 }
@@ -587,14 +589,13 @@ public class Slide extends JFrame {
         textPane.addMouseListener(mouseAdapter);
         textPane.addMouseMotionListener(mouseAdapter);
 
-        // 添加键盘监听器，更新文本内容
         textPane.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
                 isModified = true;
                 int index = getTextBoxIndex(textPane);
                 if (index != -1) {
-                    TextBoxData data = presentation.getPagesData().get(curPageIdx).getTextBoxes().get(index);
+                    TextBoxData data = showPPT.getPagesData().get(curPageIdx).getTextBoxes().get(index);
                     data.setTextContent(textPane.getText());
                 }
             }
@@ -608,7 +609,7 @@ public class Slide extends JFrame {
      */
     ShapeComponent createShapeComponentFromData(ShapeData data) {
         ShapeComponent shapeComp = new ShapeComponent(
-                this,
+                this, // 传入SLide，方便修改
                 data.getShapeType(),
                 data.getX(),
                 data.getY(),
@@ -620,7 +621,6 @@ public class Slide extends JFrame {
 
         shapeComp.setRotation(data.getRotation());
 
-        // 添加鼠标监听器，支持选取和移动
         MouseAdapter mouseAdapter = new MouseAdapter() {
             Point offset;
 
@@ -641,7 +641,6 @@ public class Slide extends JFrame {
                     shapeComp.setLocation(x, y);
                     isModified = true;
 
-                    // 更新 ShapeData 中的位置
                     updateShapePosition(shapeComp);
                 }
             }
@@ -661,7 +660,7 @@ public class Slide extends JFrame {
     /**
      * 从 ImageData 创建 ImageComponent
      */
-    ImageComponent createImageComponentFromData(ImageData data) {
+    ImageComponent createImageComponent(ImageData data) {
         ImageComponent imageComp = new ImageComponent(
                 this,
                 data.getImagePath(),
@@ -671,7 +670,7 @@ public class Slide extends JFrame {
                 data.getHeight()
         );
 
-        // 添加鼠标监听器，支持移动
+
         MouseAdapter mouseAdapter = new MouseAdapter() {
             Point offset;
 
@@ -689,8 +688,6 @@ public class Slide extends JFrame {
                 int y = location.y + e.getY() - offset.y;
                 imageComp.setLocation(x, y);
                 isModified = true;
-
-                // 更新 ImageData 中的位置
                 updateImagePosition(imageComp);
             }
 
@@ -733,7 +730,7 @@ public class Slide extends JFrame {
             BufferedImage thumbnailImage = createThumbnail(page, 160, 120);
 
             // 更新 edgePanel 中对应的缩略图
-            int labelIndex = pageIndex * 2; // 因为 edgePanel 中每个缩略图后面还有一个垂直间距组件
+            int labelIndex = pageIndex * 2; // edgePanel 中每个缩略图后面还有一个垂直间距组件
 
             if (labelIndex < edgePanel.getComponentCount()) {
                 Component comp = edgePanel.getComponent(labelIndex);
@@ -830,7 +827,7 @@ public class Slide extends JFrame {
         }
 
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(currentFile))) {
-            oos.writeObject(presentation);
+            oos.writeObject(showPPT);
             isModified = false;
             JOptionPane.showMessageDialog(this, "保存成功！", "提示", JOptionPane.INFORMATION_MESSAGE);
             return true;
@@ -863,13 +860,13 @@ public class Slide extends JFrame {
             currentFile = fileChooser.getSelectedFile();
 
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(currentFile))) {
-                presentation = (Presentation) ois.readObject();
+                showPPT = (Presentation) ois.readObject();
                 isModified = false;
 
                 pages.clear();
                 edgePanel.removeAll();
 
-                for (int i = 0; i < presentation.getPagesData().size(); i++) {
+                for (int i = 0; i < showPPT.getPagesData().size(); i++) {
                     JPanel newPage = new JPanel();
                     newPage.setBackground(Color.WHITE);
                     newPage.setBorder(BorderFactory.createLineBorder(Color.BLACK));
@@ -879,9 +876,9 @@ public class Slide extends JFrame {
                     newPage.validate();
 
                     // 重建文本框
-                    PageData pageData = presentation.getPagesData().get(i);
+                    PageData pageData = showPPT.getPagesData().get(i);
                     for (TextBoxData data : pageData.getTextBoxes()) {
-                        JTextPane textPane = createTextPaneFromData(data);
+                        JTextPane textPane = createTextPane(data);
                         newPage.add(textPane);
                     }
 
@@ -893,7 +890,7 @@ public class Slide extends JFrame {
 
                     // 重建图片
                     for (ImageData data : pageData.getImages()) {
-                        ImageComponent imageComp = createImageComponentFromData(data);
+                        ImageComponent imageComp = createImageComponent(data);
                         newPage.add(imageComp);
                     }
 

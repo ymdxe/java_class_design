@@ -17,8 +17,7 @@ public class ShapeComponent extends JComponent {
 
     // 当前拖拽的句柄类型
     private int resizingHandle = -1;
-
-
+    
     // 定义句柄类型常量
     public static final int HANDLE_NONE = -1;
     private static final int HANDLE_NW = 0;
@@ -39,8 +38,7 @@ public class ShapeComponent extends JComponent {
 
         setBounds(x, y, width, height);
         setOpaque(false); // 使背景透明
-
-        // 添加鼠标监听器，支持移动
+        
         MouseAdapter mouseAdapter = new MouseAdapter() {
             Point offset;
 
@@ -125,17 +123,14 @@ public class ShapeComponent extends JComponent {
                     int y = getY() + e.getY() - offset.y;
                     setLocation(x, y);
                     // 更新 ShapeData 中的位置
-                    updateShapeDataPosition();
+                    updateShapePos();
                 }
             }
         });
 
 
-
-        // 获得焦点以接收键盘事件
         setFocusable(true);
 
-        // 添加键盘监听器，用于取消选中
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -155,7 +150,7 @@ public class ShapeComponent extends JComponent {
         super.paintComponent(g);
 
         Graphics2D g2 = (Graphics2D) g;
-        // 抗锯齿
+
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         Shape shape = null;
@@ -191,31 +186,26 @@ public class ShapeComponent extends JComponent {
             }
         }
         g2.dispose();
-        // 绘制选中状态的边框和调整句柄
         if (isSelected) {
             Graphics2D g2d = (Graphics2D) g.create();
             g2d.setColor(Color.BLUE);
-            // 绘制边框
             g2d.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
 
-            // 绘制调整句柄
             drawHandles(g2d);
 
             g2d.dispose();
         }
     }
-    // 绘制调整句柄
     private void drawHandles(Graphics2D g2d) {
         int w = getWidth();
         int h = getHeight();
 
-        // 四个角的句柄
+        // 四个角
         g2d.fillRect(0 - HANDLE_SIZE / 2, 0 - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE); // NW
         g2d.fillRect(w - HANDLE_SIZE / 2, 0 - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE); // NE
         g2d.fillRect(0 - HANDLE_SIZE / 2, h - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE); // SW
         g2d.fillRect(w - HANDLE_SIZE / 2, h - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE); // SE
 
-        // 旋转句柄（放在顶部中央）
         g2d.fillOval(w / 2 - HANDLE_SIZE / 2, 0 - HANDLE_SIZE * 2, HANDLE_SIZE, HANDLE_SIZE);
     }
 
@@ -245,7 +235,6 @@ public class ShapeComponent extends JComponent {
         }
     }
 
-    // 调整大小或旋转
     private void resizeOrRotate(Point p) {
         int x = getX();
         int y = getY();
@@ -284,11 +273,10 @@ public class ShapeComponent extends JComponent {
                 break;
         }
 
-        // 更新 ShapeData 中的大小和旋转角度
-        updateShapeDataSizeAndRotation();
+//        updateShapeDataSizeAndRotation();
     }
     // 更新 ShapeData 中的位置
-    private void updateShapeDataPosition() {
+    private void updateShapePos() {
         // 从父组件获取 Slide 实例，更新 ShapeData
         Container parent = getParent();
         if (parent != null) {
@@ -297,15 +285,6 @@ public class ShapeComponent extends JComponent {
         }
     }
 
-    // 更新 ShapeData 中的大小和旋转角度
-    private void updateShapeDataSizeAndRotation() {
-        // 从父组件获取 Slide 实例，更新 ShapeData
-        Container parent = getParent();
-        if (parent != null) {
-            Slide slide = (Slide) SwingUtilities.getWindowAncestor(parent);
-            slide.updateShapeSizeAndRotation(this);
-        }
-    }
 
     // 通知父组件选中了此形状
     private void selectThisShape() {

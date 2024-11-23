@@ -29,7 +29,6 @@ public class ShapeData implements Serializable {
         this.rotation = rotation;
     }
 
-    // Getters and setters
     public int getShapeType() { return shapeType; }
     public void setShapeType(int shapeType) { this.shapeType = shapeType; }
 
